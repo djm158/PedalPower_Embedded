@@ -74,6 +74,13 @@ void loop() {
       calibration_factor += 10;
     else if(temp == '-' || temp == 'z')
       calibration_factor -= 10;
+    else if (temp == 'b') {
+      calibration_factor += 100;
+    } else if(temp == 'c') {
+      calibration_factor -= 100;
+    } else if(temp == 't') {
+      scale.tare();
+    }
   }
 }
 

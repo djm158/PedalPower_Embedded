@@ -85,21 +85,25 @@ void loop() {
   sensors_event_t event; 
   gyro.getEvent(&event);
 
-  float x = event.gyro.x;
-  float y = event.gyro.y;
   float z = event.gyro.z;
   float f = scale.get_units();
 
   float power;
 
-  Serial.print("x: ");
-  Serial.print(x);
-  Serial.print(" y: ");
-  Serial.print(y);
+//  Serial.print("x: ");
+//  Serial.print(x);
+//  Serial.print(" y: ");
+//  Serial.print(y);
   Serial.print(" z: ");
   Serial.print(z);
   Serial.print(" f: ");
   Serial.println(f);
+
+  // temp until Dan figures out if he wired up the strain gauges correctly
+  if(f < 0.0000) {
+    f = -f;
+  }
+
 
   scale.power_down();              // put the ADC in sleep mode
   
@@ -107,6 +111,7 @@ void loop() {
   aci_evt_opcode_t status = BTLEserial.getState();
   // If the status changed....
   if (status != laststatus) {
+    Serial.println("status: " + status);
     // print it out!
     if (status == ACI_EVT_DEVICE_STARTED) {
         Serial.println(F("* Advertising started"));
@@ -119,12 +124,24 @@ void loop() {
     }
     // OK set the last status change to this one
     laststatus = status;
+  } 
+
+  if(status == ACI_EVT_DISCONNECTED) {
+    Serial.println("HELP");
   }
 
   if (status == ACI_EVT_CONNECTED) {
     // Lets see if there's any data for us!
     if (BTLEserial.available()) {
       Serial.print("* "); Serial.print(BTLEserial.available()); Serial.println(F(" bytes available from BTLE"));
+    }
+    // OK while we still have something to read, get a character and print it out
+    while (BTLEserial.available()) {
+      char c = BTLEserial.read();
+      if(c == 't') {
+        scale.tare();
+      }
+      Serial.print(c);
     }
 
       uint8_t sendbuffer[sizeof(float)];
