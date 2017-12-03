@@ -36,7 +36,7 @@
 #define DOUT  A1
 #define CLK  A0
 
-HX711 scale(DOUT, CLK);
+HX711 scale(A0, A1);
 
 float calibration_factor = 9500; //-7050 worked for my 440lb max scale setup
 

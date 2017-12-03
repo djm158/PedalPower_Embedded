@@ -19,7 +19,7 @@ const float CRANK_ARM_LENGTH = 0.175;
 const float KG_CONVERSION = 0.45359237;
 Adafruit_BLE_UART BTLEserial = Adafruit_BLE_UART(ADAFRUITBLE_REQ, ADAFRUITBLE_RDY, ADAFRUITBLE_RST);
 
-HX711 scale(A1, A0); // omit 'gain' parameter - defaults to 128
+HX711 scale(A0, A1); // omit 'gain' parameter - defaults to 128
 
 Adafruit_L3GD20_Unified gyro = Adafruit_L3GD20_Unified(20);
 float calibration_factor = 9500;
@@ -28,41 +28,8 @@ float calibration_factor = 9500;
 void setup() {
   Serial.begin(9600);
 
-  Serial.println("HX711 Demo");
-
-  Serial.println("Before setting up the scale:");
-  Serial.print("read: \t\t");
-  Serial.println(scale.read());      // print a raw reading from the ADC
-
-  Serial.print("read average: \t\t");
-  Serial.println(scale.read_average(20));   // print the average of 20 readings from the ADC
-
-  Serial.print("get value: \t\t");
-  Serial.println(scale.get_value(5));   // print the average of 5 readings from the ADC minus the tare weight (not set yet)
-
-  Serial.print("get units: \t\t");
-  Serial.println(scale.get_units(5), 1);  // print the average of 5 readings from the ADC minus tare weight (not set) divided 
-            // by the SCALE parameter (not set yet)  
-
-  scale.set_scale(calibration_factor);                      // this value is obtained by calibrating the scale with known weights; see the README for details
+  scale.set_scale();                      // this value is obtained by calibrating the scale with known weights; see the README for details
   scale.tare();        
-
-  Serial.println("After setting up the scale:");
-
-  Serial.print("read: \t\t");
-  Serial.println(scale.read());                 // print a raw reading from the ADC
-
-//  Serial.print("read average: \t\t");
-//  Serial.println(scale.read_average(20));       // print the average of 20 readings from the ADC
-
-  Serial.print("get value: \t\t");
-  Serial.println(scale.get_value(5));    // print the average of 5 readings from the ADC minus the tare weight, set with tare()
-
-  Serial.print("get units: \t\t");
-  Serial.println(scale.get_units(5), 1);        // print the average of 5 readings from the ADC minus tare weight, divided 
-            // by the SCALE parameter set with set_scale
-
-  Serial.println("Gyroscope Test"); Serial.println("");
   
   /* Enable auto-ranging */
   gyro.enableAutoRange(true);
@@ -77,8 +44,6 @@ void setup() {
 
   // begin serial connection
   BTLEserial.begin();
-  Serial.println(sizeof(float));
-
 }
 
 aci_evt_opcode_t laststatus = ACI_EVT_DISCONNECTED;
@@ -87,6 +52,11 @@ void loop() {
 
     // Tell the nRF8001 to do whatever it should be working on.
   BTLEserial.pollACI();
+  aci_evt_opcode_t status = BTLEserial.getState();
+
+  scale.set_scale(calibration_factor); //Adjust to this calibration factor
+
+
   sensors_event_t event; 
   gyro.getEvent(&event);
 
@@ -95,7 +65,7 @@ void loop() {
   float y = event.gyro.y;
   float f = scale.get_units();
 
-  float power;
+  float power = 0.0;
 
   Serial.print("x: ");
   Serial.print(x);
@@ -104,18 +74,16 @@ void loop() {
   Serial.print(" z: ");
   Serial.print(z);
   Serial.print(" f: ");
-  Serial.println(f);
 
   // temp until Dan figures out if he wired up the strain gauges correctly
   if(f < 0.0000) {
     f = -f;
   }
 
+  Serial.println(f);
 
-  scale.power_down();              // put the ADC in sleep mode
   
   // Ask what is our current status
-  aci_evt_opcode_t status = BTLEserial.getState();
   // If the status changed....
   if (status != laststatus) {
     Serial.println("status: " + status);
@@ -146,9 +114,7 @@ void loop() {
     while (BTLEserial.available()) {
       char c = BTLEserial.read();
       if(c == 't') {
-        scale.power_up();
         scale.tare();
-        scale.power_down();
       }
       Serial.print(c);
     }
@@ -161,6 +127,5 @@ void loop() {
       // write the data
       BTLEserial.write(sendbuffer, sendbuffersize);
   }
-  scale.power_up();
   delay(500);
 }
