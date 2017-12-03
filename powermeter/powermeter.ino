@@ -22,7 +22,9 @@ Adafruit_BLE_UART BTLEserial = Adafruit_BLE_UART(ADAFRUITBLE_REQ, ADAFRUITBLE_RD
 HX711 scale(A0, A1); // omit 'gain' parameter - defaults to 128
 
 Adafruit_L3GD20_Unified gyro = Adafruit_L3GD20_Unified(20);
-float calibration_factor = 9500;
+
+// determined from calibrate script
+float calibration_factor = 6140;
 
 
 void setup() {
