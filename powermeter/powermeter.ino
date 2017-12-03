@@ -55,7 +55,15 @@ void loop() {
     // Tell the nRF8001 to do whatever it should be working on.
   BTLEserial.pollACI();
   aci_evt_opcode_t status = BTLEserial.getState();
-
+    if (status == ACI_EVT_DEVICE_STARTED) {
+        Serial.println(F("* Advertising started"));
+    }
+    if (status == ACI_EVT_CONNECTED) {
+        Serial.println(F("* Connected!"));
+    }
+    if (status == ACI_EVT_DISCONNECTED) {
+        Serial.println(F("* Disconnected or advertising timed out"));
+    }
   scale.set_scale(calibration_factor); //Adjust to this calibration factor
 
 
@@ -83,7 +91,6 @@ void loop() {
   }
 
   Serial.println(f);
-
   
   // Ask what is our current status
   // If the status changed....
@@ -102,10 +109,6 @@ void loop() {
     // OK set the last status change to this one
     laststatus = status;
   } 
-
-  if(status == ACI_EVT_DISCONNECTED) {
-    Serial.println("Bluetooth disconnected");
-  }
 
   if (status == ACI_EVT_CONNECTED) {
     // Lets see if there's any data for us!
