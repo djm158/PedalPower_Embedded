@@ -47,6 +47,8 @@ void setup() {
   Serial.println("After readings begin, place known weight on scale");
   Serial.println("Press + or a to increase calibration factor");
   Serial.println("Press - or z to decrease calibration factor");
+  Serial.println("Press b to increase by 100");
+  Serial.println("Press c to decrease by 100");
 
   scale.set_scale();
   scale.tare(); //Reset the scale to 0

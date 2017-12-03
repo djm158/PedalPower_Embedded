@@ -15,11 +15,14 @@
 #define ADAFRUITBLE_RDY 2     // This should be an interrupt pin, on Uno thats #2 or #3
 #define ADAFRUITBLE_RST 9
 
+const float CRANK_ARM_LENGTH = 0.175;
+const float KG_CONVERSION = 0.45359237;
 Adafruit_BLE_UART BTLEserial = Adafruit_BLE_UART(ADAFRUITBLE_REQ, ADAFRUITBLE_RDY, ADAFRUITBLE_RST);
 
 HX711 scale(A1, A0); // omit 'gain' parameter - defaults to 128
 
 Adafruit_L3GD20_Unified gyro = Adafruit_L3GD20_Unified(20);
+float calibration_factor = 9500;
 
 
 void setup() {
@@ -41,7 +44,7 @@ void setup() {
   Serial.println(scale.get_units(5), 1);  // print the average of 5 readings from the ADC minus tare weight (not set) divided 
             // by the SCALE parameter (not set yet)  
 
-  scale.set_scale(2280.f);                      // this value is obtained by calibrating the scale with known weights; see the README for details
+  scale.set_scale(calibration_factor);                      // this value is obtained by calibrating the scale with known weights; see the README for details
   scale.tare();        
 
   Serial.println("After setting up the scale:");
@@ -71,6 +74,8 @@ void setup() {
     Serial.println("Ooops, no L3GD20 detected ... Check your wiring!");
     while(1);
   }
+
+  // begin serial connection
   BTLEserial.begin();
   Serial.println(sizeof(float));
 
@@ -86,14 +91,16 @@ void loop() {
   gyro.getEvent(&event);
 
   float z = event.gyro.z;
+  float x = event.gyro.x;
+  float y = event.gyro.y;
   float f = scale.get_units();
 
   float power;
 
-//  Serial.print("x: ");
-//  Serial.print(x);
-//  Serial.print(" y: ");
-//  Serial.print(y);
+  Serial.print("x: ");
+  Serial.print(x);
+  Serial.print(" y: ");
+  Serial.print(y);
   Serial.print(" z: ");
   Serial.print(z);
   Serial.print(" f: ");
@@ -127,7 +134,7 @@ void loop() {
   } 
 
   if(status == ACI_EVT_DISCONNECTED) {
-    Serial.println("HELP");
+    Serial.println("Bluetooth disconnected");
   }
 
   if (status == ACI_EVT_CONNECTED) {
@@ -139,19 +146,21 @@ void loop() {
     while (BTLEserial.available()) {
       char c = BTLEserial.read();
       if(c == 't') {
+        scale.power_up();
         scale.tare();
+        scale.power_down();
       }
       Serial.print(c);
     }
 
       uint8_t sendbuffer[sizeof(float)];
-      memcpy(sendbuffer, (unsigned char *) &f, sizeof(f));
+      power = 2*f*z*CRANK_ARM_LENGTH*KG_CONVERSION;
+      memcpy(sendbuffer, (unsigned char *) &power, sizeof(f));
       char sendbuffersize = sizeof(sendbuffer);
 
-      Serial.println(f);
       // write the data
       BTLEserial.write(sendbuffer, sendbuffersize);
   }
   scale.power_up();
-  delay(300);
+  delay(500);
 }
