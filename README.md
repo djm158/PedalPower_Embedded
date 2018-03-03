@@ -2,6 +2,8 @@
 
 Arduino source code for Pitt ECE 1896 senior design project
 
+See the accompanying [android app](https://github.com/djm158/PedalPower)
+
 Tested on a [DC Boarduino w/ ATmega328](https://www.adafruit.com/product/72)
 
 ## Dependencies
